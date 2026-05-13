@@ -391,6 +391,9 @@ func wsStreamServe(api string, channel WsChannelType, resultChan chan []byte, er
 		go keepAlive(c, WebsocketTimeout, writeMu)
 	}
 	go func() {
+		// recover 防止在 Close() 关闭 errChan/resultChan 的同时，
+		// 本 goroutine 仍尝试向已关闭 channel 发送数据而 panic。
+		defer func() { recover() }()
 		for {
 			_, msg, e := c.ReadMessage()
 			if e != nil {
