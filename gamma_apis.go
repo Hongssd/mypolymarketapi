@@ -14,6 +14,8 @@ const (
 	GammaListMarketsKeyset // GET List markets (keyset pagination)
 	GammaListMarkets       // GET List markets
 	GammaGetMarketByID     // GET Get market by id
+	GammaGetMarketBySlug   // GET Get market by slug
+	GammaGetMarketTags     // GET Get market tags by id
 
 	// Profiles
 	GammaGetPublicProfile // GET Get public profile by wallet address (query: address)
@@ -30,7 +32,9 @@ var GammaAPITypeMap = map[GammaAPIType]string{
 	// Markets
 	GammaListMarketsKeyset: "/markets/keyset", // GET List markets (keyset pagination)
 	GammaListMarkets:       "/markets",        // GET List markets
-	GammaGetMarketByID:     "/markets/{id}",   // GET Get market by id
+	GammaGetMarketByID:     "/markets/{id}",        // GET Get market by id
+	GammaGetMarketBySlug:   "/markets/slug/{slug}", // GET Get market by slug
+	GammaGetMarketTags:     "/markets/{id}/tags",   // GET Get market tags by id
 
 	// Profiles
 	GammaGetPublicProfile: "/public-profile", // GET Get public profile by wallet address (query: address)

@@ -30,12 +30,12 @@ func (e EventType) String() string { return string(e) }
 // ---------------------------------------------------------------------------
 
 const (
-	inboundBookCap          = 256
-	inboundPriceChangeCap   = 1024
-	inboundLastTradeCap     = 256
-	inboundTickSizeCap      = 64
-	inboundBestBidAskCap    = 256
-	inboundNewMarketCap     = 64
+	inboundBookCap           = 256
+	inboundPriceChangeCap    = 1024
+	inboundLastTradeCap      = 256
+	inboundTickSizeCap       = 64
+	inboundBestBidAskCap     = 256
+	inboundNewMarketCap      = 64
 	inboundMarketResolvedCap = 64
 )
 
@@ -70,7 +70,7 @@ func closeChanGeneric[T any](ch chan T) {
 type marketStream[T any] struct {
 	inboundCh chan T
 	mu        sync.RWMutex      // 保护 subs map
-	subs      map[string]chan T  // subKey → 订阅者 channel
+	subs      map[string]chan T // subKey → 订阅者 channel
 	stopCh    chan struct{}
 }
 
@@ -180,7 +180,7 @@ type MarketWsStreamClient struct {
 	WsStreamClient
 
 	// 连接级别协议参数
-	level                int  // 1/2/3，默认 2
+	level                int // 1/2/3，默认 2
 	customFeatureEnabled bool
 
 	// 协议订阅引用计数：assetID → 当前活跃订阅者总数（跨所有事件类型）
@@ -189,23 +189,23 @@ type MarketWsStreamClient struct {
 	initialSubSent bool // 是否已发出过首次 type=market 订阅消息
 
 	// 各事件类型的流 map（key = assetID）
-	bookMu        sync.RWMutex
-	bookStreams    map[string]*marketStream[WsMarketOrderBook]
+	bookMu      sync.RWMutex
+	bookStreams map[string]*marketStream[WsMarketOrderBook]
 
-	pcMu              sync.RWMutex
+	pcMu               sync.RWMutex
 	priceChangeStreams map[string]*marketStream[WsMarketPriceChange]
 
-	ltMu            sync.RWMutex
+	ltMu             sync.RWMutex
 	lastTradeStreams map[string]*marketStream[WsMarketLastTradePrice]
 
-	tsMu           sync.RWMutex
+	tsMu            sync.RWMutex
 	tickSizeStreams map[string]*marketStream[WsMarketTickSizeChange]
 
-	bbaMu            sync.RWMutex
+	bbaMu             sync.RWMutex
 	bestBidAskStreams map[string]*marketStream[WsMarketBestBidAsk]
 
 	// 全局事件流（无 assetID，需 customFeatureEnabled=true）
-	nmMu           sync.RWMutex
+	nmMu            sync.RWMutex
 	newMarketStream *marketStream[WsMarketNewMarket] // 首次订阅时懒创建
 
 	mrMu                 sync.RWMutex
@@ -231,8 +231,8 @@ func (*MyPolymarket) NewMarketWsStreamClient() *MarketWsStreamClient {
 			resultChan:      make(chan []byte),
 			errChan:         make(chan error),
 		},
-		level:             2,
-		protocolSubs:      make(map[string]int),
+		level:              2,
+		protocolSubs:       make(map[string]int),
 		bookStreams:        make(map[string]*marketStream[WsMarketOrderBook]),
 		priceChangeStreams: make(map[string]*marketStream[WsMarketPriceChange]),
 		lastTradeStreams:   make(map[string]*marketStream[WsMarketLastTradePrice]),
@@ -820,4 +820,3 @@ func (ws *MarketWsStreamClient) addOwnerCancel(subscriberID string, cancel func(
 	ws.owners[subscriberID].add(cancel)
 	ws.ownersMu.Unlock()
 }
-

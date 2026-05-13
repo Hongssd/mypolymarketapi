@@ -929,6 +929,39 @@ func (api *GammaGetMarketByIDAPI) IncludeTag(includeTag bool) *GammaGetMarketByI
 	return api
 }
 
+type GammaGetMarketBySlugAPI struct {
+	client *GammaRestClient
+	slug   *string
+	req    *GammaGetMarketBySlugReq
+}
+
+type GammaGetMarketBySlugReq struct {
+	IncludeTag *bool `json:"include_tag"` // boolean 为 true 时在 market 上展开 Tags（与 Get market by id 一致）
+}
+
+// string 市场 slug（路径参数 `{slug}`）
+func (api *GammaGetMarketBySlugAPI) Slug(slug string) *GammaGetMarketBySlugAPI {
+	api.slug = GetPointer(slug)
+	return api
+}
+
+// bool 为 true 时在 market 上展开 Tags
+func (api *GammaGetMarketBySlugAPI) IncludeTag(includeTag bool) *GammaGetMarketBySlugAPI {
+	api.req.IncludeTag = GetPointer(includeTag)
+	return api
+}
+
+type GammaGetMarketTagsAPI struct {
+	client *GammaRestClient
+	id     *int64
+}
+
+// int64 市场 ID（路径参数）
+func (api *GammaGetMarketTagsAPI) ID(id int64) *GammaGetMarketTagsAPI {
+	api.id = GetPointer(id)
+	return api
+}
+
 type GammaGetEventByIDAPI struct {
 	client *GammaRestClient
 	id     *int64

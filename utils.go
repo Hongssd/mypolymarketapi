@@ -227,3 +227,40 @@ func (m *MySyncMap[K, V]) MapValues(f func(k K, v V) V) *MySyncMap[K, V] {
 	})
 	return &res
 }
+
+
+func GetAssetIDsFromEventSlug(slug string) ([]string, error) {
+	p := &MyPolymarket{}
+	gammaClient := p.NewGammaRestClient()
+	res, err := gammaClient.NewGammaGetEventBySlug().Slug(slug).Do()
+	if err != nil {
+		return nil, err
+	}
+	var assetIDs []string
+	for _, market := range res.Data.Markets {
+		log.Infof("market: %+v", market.Slug)
+		var tokenIDs []string
+		err = json.Unmarshal([]byte(market.ClobTokenIds), &tokenIDs)
+		if err != nil {
+			return nil, err
+		}
+		assetIDs = append(assetIDs, tokenIDs...)
+	}
+
+	return assetIDs, nil
+}
+
+func GetAssetIDsFromMarketSlug(slug string) ([]string, error) {
+	p := &MyPolymarket{}
+	gammaClient := p.NewGammaRestClient()
+	res, err := gammaClient.NewGammaGetMarketBySlug().Slug(slug).Do()
+	if err != nil {
+		return nil, err
+	}
+	var tokenIDs []string
+	err = json.Unmarshal([]byte(res.Data.ClobTokenIds), &tokenIDs)
+	if err != nil {
+		return nil, err
+	}
+	return tokenIDs, nil
+}
