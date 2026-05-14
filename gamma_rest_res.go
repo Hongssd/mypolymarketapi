@@ -24,6 +24,12 @@ type GammaGetEventByIDRes GammaEvent
 // GammaGetMarketByIDRes 是 Get market by id 接口的响应体。
 type GammaGetMarketByIDRes GammaMarket
 
+// GammaGetMarketBySlugRes 是 Get market by slug 接口的响应体（Gamma `GET /markets/slug/{slug}`）。
+type GammaGetMarketBySlugRes GammaMarket
+
+// GammaGetMarketTagsRes 是 Get market tags by id 接口的响应体（Gamma `GET /markets/{id}/tags`）。
+type GammaGetMarketTagsRes []GammaTag
+
 // GammaGetEventBySlugRes 是 Get event by slug 接口的响应体。
 type GammaGetEventBySlugRes GammaEvent
 

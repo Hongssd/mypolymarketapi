@@ -446,6 +446,8 @@ func (api *CLOBPostOrderAPI) Do() (*PolyMarketRestRes[CLOBPostOrderRes], error) 
 	if order.Builder == nil || strings.TrimSpace(*order.Builder) == "" {
 		order.Builder = GetPointer(clobV2Bytes32ZeroWire)
 	}
+	// 签名与 wire 修正写在局部副本上，须写回 req，否则 Marshal 仍为无签名旧载荷 → order_version_mismatch
+	*api.req.Order = order
 
 	body, err := json.Marshal(api.req)
 	if err != nil {

@@ -227,3 +227,70 @@ func (m *MySyncMap[K, V]) MapValues(f func(k K, v V) V) *MySyncMap[K, V] {
 	})
 	return &res
 }
+
+// ParseClobTokenIDs 解析 Gamma Market 的 clobTokenIds 字段（模型里为 string）。
+// 常见为 JSON 数组字符串，但部分市场为空、JSON null、或管道占位（如 "||"），直接 json.Unmarshal 到 []string 会失败。
+func ParseClobTokenIDs(raw string) ([]string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "null" {
+		return nil, nil
+	}
+	var ids []string
+	if err := json.Unmarshal([]byte(raw), &ids); err == nil {
+		return ids, nil
+	}
+	var inner string
+	if err := json.Unmarshal([]byte(raw), &inner); err == nil {
+		inner = strings.TrimSpace(inner)
+		if inner == "" || inner == "null" {
+			return nil, nil
+		}
+		if err := json.Unmarshal([]byte(inner), &ids); err == nil {
+			return ids, nil
+		}
+	}
+	if strings.Contains(raw, "|") {
+		ids = nil
+		for _, p := range strings.Split(raw, "|") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				ids = append(ids, p)
+			}
+		}
+		if len(ids) > 0 {
+			return ids, nil
+		}
+		return nil, nil
+	}
+	return nil, fmt.Errorf("parse clobTokenIds: invalid form %q", raw)
+}
+
+func GetAssetIDsFromEventSlug(slug string) ([]string, error) {
+	p := &MyPolymarket{}
+	gammaClient := p.NewGammaRestClient()
+	res, err := gammaClient.NewGammaGetEventBySlug().Slug(slug).Do()
+	if err != nil {
+		return nil, err
+	}
+	var assetIDs []string
+	for _, market := range res.Data.Markets {
+		log.Infof("market: %+v", market.Slug)
+		tokenIDs, err := ParseClobTokenIDs(market.ClobTokenIds)
+		if err != nil {
+			return nil, err
+		}
+		assetIDs = append(assetIDs, tokenIDs...)
+	}
+
+	return assetIDs, nil
+}
+
+func GetAssetIDsFromMarketSlug(slug string) ([]string, error) {
+	p := &MyPolymarket{}
+	gammaClient := p.NewGammaRestClient()
+	res, err := gammaClient.NewGammaGetMarketBySlug().Slug(slug).Do()
+	if err != nil {
+		return nil, err
+	}
+	return ParseClobTokenIDs(res.Data.ClobTokenIds)
+}

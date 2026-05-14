@@ -25,6 +25,13 @@ const (
 	UNSUBSCRIBE = "unsubscribe"
 )
 
+// WebSocket 单帧最大读字节数（gorilla/websocket SetReadLimit）。
+// market 频道在大量 assets_ids 订阅时会收到超大 initial_dump / book 数组，默认 640KB 易触发 read limit exceeded。
+const (
+	wsReadLimitDefault = 655350          // ~640KB，user / sports 沿用原行为
+	wsReadLimitMarket  = 64 * 1024 * 1024 // 64MB，容纳大批量 orderbook 快照
+)
+
 var (
 	WebsocketTimeout   = 10 * time.Second
 	WebsocketKeepalive = true
@@ -60,7 +67,7 @@ type WsAuth struct {
 // WsSubscribeReq 统一 WS 订阅/动态订阅请求体：
 // - market 首次订阅：type=market + assets_ids + 可选 initial_dump/level/custom_feature_enabled
 // - market 动态订阅：assets_ids + operation + 可选 level/custom_feature_enabled（无需 type）
-// - user 首次订阅：type=user + auth + markets
+// - user 首次订阅：type=user + auth；markets 可选（省略则全市场，见官方 WSS user 文档）
 // - user 动态订阅：markets + operation（无需 type/auth）
 type WsSubscribeReq struct {
 	// common
@@ -131,32 +138,10 @@ func (sub *Subscription) CloseChan() chan struct{} {
 }
 
 // MarketWsStreamClient 定义在 ws_market.go（完整广播-订阅实现）。
-
-type UserWsStreamClient struct {
-	WsStreamClient
-}
+// UserWsStreamClient 定义在 ws_user.go（完整广播-订阅实现）。
 
 type SportsWsStreamClient struct {
 	WsStreamClient
-}
-
-func (*MyPolymarket) NewUserWsStreamClient(client *Client) *UserWsStreamClient {
-	return &UserWsStreamClient{
-		WsStreamClient: WsStreamClient{
-			client:          client,
-			channel:         WS_USER,
-			writeMu:         &sync.Mutex{},
-			isClose:         true,
-			waitSubResult:   false,
-			waitSubResultMu: &sync.Mutex{},
-
-			reSubscribeMu: &sync.Mutex{},
-
-			// user 频道暂时复用这套全局事件流字段（不使用的保持 nil 即可）
-			resultChan: make(chan []byte),
-			errChan:    make(chan error),
-		},
-	}
 }
 
 func (*MyPolymarket) NewSportsWsStreamClient() *SportsWsStreamClient {
@@ -407,7 +392,12 @@ func wsStreamServe(api string, channel WsChannelType, resultChan chan []byte, er
 	if err != nil {
 		return nil, err
 	}
-	c.SetReadLimit(655350)
+	switch channel {
+	case WS_MARKET:
+		c.SetReadLimit(wsReadLimitMarket)
+	default:
+		c.SetReadLimit(wsReadLimitDefault)
+	}
 	// market/user 要求客户端主动发 PING；sports 由服务端发 ping，客户端只需回 pong。
 	if WebsocketKeepalive && (channel == WS_MARKET || channel == WS_USER) {
 		go keepAlive(c, WebsocketTimeout, writeMu)
